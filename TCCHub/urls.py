@@ -17,7 +17,28 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 urlpatterns = [
+    # Admin site
     path('admin/', admin.site.urls),
+    # URLs para autenticação
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
+
+    # URLs para os projetos aluno
+    path("projetosAluno/", include("projetos.urls")),
+    path("novoProjeto/", include("projetos.urls")),
+    path("editarProjeto/<int:projeto_id>/", include("projetos.urls")),
+    path("excluirProjeto/<int:projeto_id>/", include("projetos.urls")),
+    
+    # URLs para os projetos professor
+    path("projetosProfessor/", include("projetos.urls")),
+
+    # URLs para as entregas
+    path("entregas/", include("postarEntrega.urls")),
+    path("postarEntrega/", include("postarEntrega.urls")),
+    # path("editarEntrega/<int:entrega_id>/", include("postarEntrega.urls")),
+    path("excluirEntrega/<int:entrega_id>/", include("postarEntrega.urls")),
+
+    # URLs para corrigir e concluir entregas
+    path("CorrigirEntrega/<int:entrega_id>/", include("corrigirEntrega.urls")),
+    path("ConcluirEntrega/<int:entrega_id>/", include("corrigirEntrega.urls")),
 ]
