@@ -6,7 +6,7 @@
 
 ## 🏛️ 1. Identificação da Equipe
 
-- **Nome da Equipe:** RepoAcadêmico
+- **Nome da Equipe:** 
 - **Nome dos Integrantes e Períodos:**
   - Yann Muniz Barbosa da Conceição – 7º período
   - Italo de Souza Ivair – 6º período
