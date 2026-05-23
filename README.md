@@ -11,7 +11,6 @@
   - Yann Muniz Barbosa da Conceição – 7º período
   - Italo de Souza Ivair – 6º período
   - Felipe Gabriel Zegunis Queiroz – 3º período
-  - Matheus Moreira Ribeiro da Silva – 1º período
 - **Link do Repositório (GitHub/GitLab):** https://github.com/YannMuniz/TCCHub
 - **Link do Rascunho/Design (Figma/Lovable/Excalidraw):** (a preencher)
 
