@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCC Hub - Acesso</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+
+    <div class="bg-white p-8 md:p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 relative overflow-hidden">
+        
+        <div class="flex flex-col items-center mb-6">
+            <div class="bg-blue-900 text-white p-3 rounded-lg mb-4 shadow-md">
+                <i data-lucide="graduation-cap" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900">TCC Hub</h1>
+        </div>
+
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6 text-sm text-blue-800">
+            <p class="font-semibold mb-2"><i data-lucide="info" class="w-4 h-4 inline pb-0.5"></i> Contas de Teste:</p>
+            <div class="grid grid-cols-1 gap-2 opacity-90">
+                <div class="bg-white p-2 rounded border border-blue-200">
+                    <span class="font-bold">Aluno:</span> aluno@gmail.com <br>
+                    <span class="font-bold">Senha:</span> 1234
+                </div>
+                <div class="bg-white p-2 rounded border border-blue-200">
+                    <span class="font-bold">Professor:</span> professor@gmail.com <br>
+                    <span class="font-bold">Senha:</span> 1234
+                </div>
+            </div>
+        </div>
+
+        <div id="form-login-container">
+            <h2 class="text-lg font-bold text-gray-800 mb-4 text-center">Entrar no Sistema</h2>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                    <input type="email" id="login-email" required placeholder="exemplo@gmail.com" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="login-senha" required placeholder="••••••••" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors mt-2">Entrar</button>
+            </form>
+            
+            <div class="mt-4 flex items-center justify-center">
+                <span class="border-b w-1/5 lg:w-1/4"></span>
+                <span class="text-xs text-center text-gray-500 uppercase px-3">Ou</span>
+                <span class="border-b w-1/5 lg:w-1/4"></span>
+            </div>
+            
+            <button onclick="loginGoogle()" class="mt-4 w-full flex items-center justify-center gap-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 rounded-lg transition-colors">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google">
+                Conectar com Google
+            </button>
+
+            <p class="mt-6 text-center text-sm text-gray-600">
+                Não tem uma conta? <button onclick="toggleForms()" type="button" class="text-blue-600 font-semibold hover:underline">Novo usuário</button>
+            </p>
+        </div>
+
+        <div id="form-cadastro-container" class="hidden">
+            <h2 class="text-lg font-bold text-gray-800 mb-4 text-center">Criar Nova Conta</h2>
+            <form id="cadastro-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+                    <input type="text" id="cad-nome" required placeholder="Seu nome" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail (Gmail)</label>
+                    <input type="email" id="cad-email" required placeholder="exemplo@gmail.com" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="cad-senha" required placeholder="Crie uma senha" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div class="pt-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Você é aluno ou professor?</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="tipo_conta" value="aluno" required class="w-4 h-4 text-blue-600">
+                            <span class="text-sm text-gray-700">Aluno</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="tipo_conta" value="professor" required class="w-4 h-4 text-blue-600">
+                            <span class="text-sm text-gray-700">Professor</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors mt-4">Criar conta</button>
+            </form>
+
+            <div class="mt-4 flex items-center justify-center">
+                <span class="border-b w-1/5 lg:w-1/4"></span>
+                <span class="text-xs text-center text-gray-500 uppercase px-3">Ou</span>
+                <span class="border-b w-1/5 lg:w-1/4"></span>
+            </div>
+            
+            <button onclick="loginGoogle()" class="mt-4 w-full flex items-center justify-center gap-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 rounded-lg transition-colors">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google">
+                Criar com Google
+            </button>
+
+            <p class="mt-6 text-center text-sm text-gray-600">
+                Já tem uma conta? <button onclick="toggleForms()" type="button" class="text-blue-600 font-semibold hover:underline">Fazer login</button>
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Inicializando o "Banco de Dados" no LocalStorage se não existir
+        if(!localStorage.getItem('usuarios_cadastrados')) {
+            const contasPadrao = [
+                { nome: 'Ítalo', email: 'aluno@gmail.com', senha: '1234', tipo: 'aluno' },
+                { nome: 'Prof. Ricardo', email: 'professor@gmail.com', senha: '1234', tipo: 'professor' }
+            ];
+            localStorage.setItem('usuarios_cadastrados', JSON.stringify(contasPadrao));
+        }
+
+        // Alterna entre tela de Login e tela de Cadastro
+        function toggleForms() {
+            const loginForm = document.getElementById('form-login-container');
+            const cadForm = document.getElementById('form-cadastro-container');
+            
+            if (loginForm.classList.contains('hidden')) {
+                loginForm.classList.remove('hidden');
+                cadForm.classList.add('hidden');
+            } else {
+                loginForm.classList.add('hidden');
+                cadForm.classList.remove('hidden');
+            }
+        }
+
+        // Simulação do Botão do Google
+        function loginGoogle() {
+            alert("isso não é comigo não doido");
+        }
+
+        // LÓGICA DE LOGIN (Entrar)
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
+            const senha = document.getElementById('login-senha').value;
+            
+            // Puxa as contas do banco de dados (localStorage)
+            const usuarios = JSON.parse(localStorage.getItem('usuarios_cadastrados'));
+            
+            // Procura o usuário
+            const user = usuarios.find(u => u.email === email && u.senha === senha);
+
+            if (user) {
+                // Salva quem logou para puxar o nome na outra tela
+                localStorage.setItem('tccHub_userRole', user.tipo);
+                localStorage.setItem('tccHub_userName', user.nome);
+                localStorage.setItem('tccHub_userInitials', user.nome.charAt(0).toUpperCase());
+                
+                // Redireciona para o index correto
+                if (user.tipo === 'aluno') {
+                    window.location.href = 'index_aluno.html';
+                } else {
+                    window.location.href = 'index_professor.html';
+                }
+            } else {
+                alert('E-mail ou senha incorretos. Tente novamente ou crie uma nova conta.');
+            }
+        });
+
+        // LÓGICA DE CADASTRO (Novo Usuário)
+        document.getElementById('cadastro-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nome = document.getElementById('cad-nome').value.trim();
+            const email = document.getElementById('cad-email').value.trim().toLowerCase();
+            const senha = document.getElementById('cad-senha').value;
+            const tipo = document.querySelector('input[name="tipo_conta"]:checked').value;
+            
+            const usuarios = JSON.parse(localStorage.getItem('usuarios_cadastrados'));
+            
+            // Verifica se e-mail já existe
+            if (usuarios.find(u => u.email === email)) {
+                alert('Este e-mail já está cadastrado!');
+                return;
+            }
+
+            // Cadastra novo usuário
+            const novoUsuario = { nome, email, senha, tipo };
+            usuarios.push(novoUsuario);
+            localStorage.setItem('usuarios_cadastrados', JSON.stringify(usuarios));
+
+            // Loga automaticamente após o cadastro
+            localStorage.setItem('tccHub_userRole', tipo);
+            localStorage.setItem('tccHub_userName', nome);
+            localStorage.setItem('tccHub_userInitials', nome.charAt(0).toUpperCase());
+
+            alert('Conta criada com sucesso! Redirecionando...');
+
+            if (tipo === 'aluno') {
+                window.location.href = 'index_aluno.html';
+            } else {
+                window.location.href = 'index_professor.html';
+            }
+        });
+    </script>
+</body>
+</html>
