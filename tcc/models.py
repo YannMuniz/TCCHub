@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 class Projeto(models.Model):
     titulo = models.CharField(max_length=100)
@@ -9,30 +10,25 @@ class Projeto(models.Model):
 
     def __str__(self):
         return self.titulo
+      
+    def get_entregas_pendentes(self):
+        return self.entregas.filter(status='pendente')
     
-    # ──────────────────────────────────────────────────────────────
-    # TODO: Métodos adicionais para Projeto
-    # ──────────────────────────────────────────────────────────────
+    def get_entregas_aprovadas(self):
+        return self.entregas.filter(status='aprovado')
     
-    # def get_entregas_pendentes(self):
-    #     """Retorna todas as entregas com status 'pendente'"""
-    #     pass
+    def get_entregas_correcao(self):
+        return self.entregas.filter(status='corracao')
     
-    # def get_entregas_aprovadas(self):
-    #     """Retorna todas as entregas com status 'aprovado'"""
-    #     pass
+    def total_entregas(self):
+        return self.entregas.count()
     
-    # def get_entregas_correcao(self):
-    #     """Retorna todas as entregas com status 'correcao'"""
-    #     pass
-    
-    # def total_entregas(self):
-    #     """Retorna o total de entregas do projeto"""
-    #     pass
-    
-    # def percentual_conclusao(self):
-    #     """Calcula o percentual de conclusão do projeto"""
-    #     pass
+    def percentual_conclusao(self):
+        total = self.total_entregas()
+        if total ==0:
+            return 0
+        aprovadas = self.get_entregas_aprovadas().count()
+        return round((aprovadas / total) * 100, 2)
     
 
 class Usuario(AbstractUser):
@@ -48,21 +44,16 @@ class Usuario(AbstractUser):
     def __str__(self):
         return f"{self.username} ({self.cargo})"
     
-    # ──────────────────────────────────────────────────────────────
-    # TODO: Métodos adicionais para Usuario
-    # ──────────────────────────────────────────────────────────────
+    def get_projetos(self):
+        if self.cargo == "aluno":
+            return Projeto.objecs.filter(aluno=self.username)
+        return Projeto.objects.filter(orientador=self.username)
     
-    # def get_projetos(self):
-    #     """Retorna os projetos do usuário (como aluno ou orientador)"""
-    #     pass
+    def is_professor(self):
+        return self.cargo == "orientador"
     
-    # def is_professor(self):
-    #     """Verifica se o usuário é professor"""
-    #     pass
-    
-    # def is_aluno(self):
-    #     """Verifica se o usuário é aluno"""
-    #     pass
+    def is_aluno(self):
+        return self.carog == "aluno"
     
     
 class Entrega(models.Model):
@@ -99,22 +90,16 @@ class Entrega(models.Model):
 
     def __str__(self):
         return self.titulo
+       
+    def dias_atraso(self):    
+        diferenca = timezone.now() - self.data_envio
+        return diferenca.days
     
-    # ──────────────────────────────────────────────────────────────
-    # TODO: Métodos adicionais para Entrega
-    # ──────────────────────────────────────────────────────────────
+    def pode_ser_avaliada(self):
+        return self.status == "pendente"
     
-    # def dias_atraso(self):
-    #     """Calcula quantos dias a entrega está atrasada"""
-    #     pass
-    
-    # def pode_ser_avaliada(self):
-    #     """Verifica se a entrega pode ser avaliada"""
-    #     pass
-    
-    # def get_ultima_correcao(self):
-    #     """Retorna a última correção associada à entrega"""
-    #     pass
+    def get_ultima_correcao(self):
+        return self.correcoes.order_by('-data_correcao').first()
     
 
 class Correcao(models.Model):
@@ -151,14 +136,14 @@ class Correcao(models.Model):
     def __str__(self):
         return f"Correção - {self.entrega.titulo}"
     
-    # ──────────────────────────────────────────────────────────────
-    # TODO: Métodos adicionais para Correcao
-    # ──────────────────────────────────────────────────────────────
+    def notificar_aluno(self):
+        return f"Notificação enviada para o aluno do projeto: {self.entrega.projeto.aluno}"
     
-    # def notificar_aluno(self):
-    #     """Envia notificação ao aluno sobre a correção"""
-    #     pass
-    
-    # def gerar_relatorio(self):
-    #     """Gera um relatório da correção"""
-    #     pass
+    def gerar_relatorio(self):
+        return {
+            "projeto": self.entrega.projeto.titulo,
+            "entrega": self.entrega.titulo,
+            "status": self.get_status_display(),
+            "observacao": self.observacao,
+            "data": self.data_correcao.strftime("%d/%m/%Y %H:%M")
+        }
