@@ -1,0 +1,429 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCC Hub - Portal do Professor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="{% static 'tcc/css/style.css' %}">
+</head>
+<body class="flex h-screen overflow-hidden text-gray-800 relative">
+
+    {# Formulário oculto para logout via POST (exigido pelo Django CSRF) #}
+    <form id="logout-form" method="POST" action="{% url 'logout' %}" class="hidden">
+        {% csrf_token %}
+    </form>
+
+    <aside id="sidebar" class="w-96 bg-indigo-900 text-white flex flex-col h-full flex-shrink-0 z-40 transition-all duration-300 absolute md:relative -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
+
+        <div class="h-16 flex items-center justify-between px-6 border-b border-indigo-800 mt-8 md:mt-0">
+            <div class="flex items-center gap-4 overflow-hidden">
+                <div class="bg-white text-indigo-900 p-2 rounded-md flex-shrink-0">
+                    <i data-lucide="book-open-check" class="w-6 h-6"></i>
+                </div>
+                <div class="sidebar-text truncate">
+                    <h1 class="font-bold text-base leading-tight text-white truncate">TCC Hub</h1>
+                    <p class="text-sm text-indigo-300 truncate">Portal do Orientador</p>
+                </div>
+            </div>
+            <button onclick="toggleMinimize()" class="hidden md:block p-1 hover:bg-indigo-800 rounded text-indigo-300 hover:text-white transition-colors ml-2">
+                <i data-lucide="chevrons-left" id="icon-minimize" class="w-6 h-6"></i>
+            </button>
+            <button onclick="toggleMobileSidebar()" class="md:hidden text-white hover:text-indigo-200 ml-2">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <div class="p-6 flex-1 overflow-y-auto">
+            <div class="mb-8">
+                <p class="sidebar-text text-xs font-semibold text-indigo-300 mb-3 uppercase tracking-wider">Navegação</p>
+                <nav class="space-y-2">
+                    <button onclick="navigate('painel')" id="nav-painel" class="nav-btn w-full flex items-center gap-4 px-4 py-3 text-sm text-indigo-100 hover:bg-indigo-800 rounded-md transition-colors text-left" title="Dashboard">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5 flex-shrink-0"></i>
+                        <span class="sidebar-text">Dashboard</span>
+                    </button>
+                    <button onclick="navigate('projetos')" id="nav-projetos" class="nav-btn w-full flex items-center gap-4 px-4 py-3 text-sm font-medium bg-indigo-800 text-white rounded-md transition-colors text-left" title="Meus Orientandos">
+                        <i data-lucide="users" class="w-5 h-5 flex-shrink-0"></i>
+                        <span class="sidebar-text">Meus Orientandos</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div>
+                <p class="sidebar-text text-xs font-semibold text-indigo-300 mb-3 uppercase tracking-wider">TCCs Ativos</p>
+                <nav class="space-y-2" id="sidebar-projects-list"></nav>
+            </div>
+        </div>
+    </aside>
+
+    <div id="sidebar-overlay" onclick="toggleMobileSidebar()" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden"></div>
+
+    <main class="flex-1 h-full overflow-y-auto relative bg-[#fafafa]">
+
+        <header class="bg-white border-b border-gray-200 h-16 flex items-center px-6 sticky top-0 z-20 justify-between">
+            <button onclick="toggleMobileSidebar()" class="p-2 mr-4 text-gray-600 hover:bg-gray-100 rounded-md transition-colors md:hidden">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            <div class="flex-1"></div>
+
+            <div class="flex items-center gap-4">
+                {# Nome e iniciais vêm da session Django #}
+                <span class="text-sm font-medium text-gray-600 hidden md:block">
+                    {{ request.user.get_full_name|default:request.user.username }}
+                </span>
+                <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-700">
+                    {{ request.user.get_full_name|default:request.user.username|first|upper }}
+                </div>
+                <div class="h-6 w-px bg-gray-300 mx-1"></div>
+                <button onclick="logout()" class="text-gray-500 hover:text-red-600 transition-colors flex items-center gap-2 text-sm font-medium" title="Sair">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        {# ── Dashboard ────────────────────────────────────────── #}
+        <div id="view-painel" class="view-section hidden p-8 md:p-12 w-full">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-8">Resumo de Orientação</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div class="bg-white border border-gray-200 p-8 rounded-xl shadow-sm">
+                    <p class="text-base text-gray-500 font-medium">Alunos Orientados</p>
+                    <p class="text-4xl font-bold text-indigo-600 mt-3" id="stat-tccs">0</p>
+                </div>
+                <div class="bg-white border border-gray-200 p-8 rounded-xl shadow-sm">
+                    <p class="text-base text-gray-500 font-medium">Correções Pendentes</p>
+                    <p class="text-4xl font-bold text-yellow-600 mt-3" id="stat-pendentes">0</p>
+                </div>
+            </div>
+            <button onclick="navigate('projetos')" class="text-indigo-600 hover:underline text-base font-medium">Ver trabalhos &rarr;</button>
+        </div>
+
+        {# ── Lista de Projetos ─────────────────────────────────── #}
+        <div id="view-projetos" class="view-section p-8 md:p-12 w-full">
+            <p class="text-base text-gray-500 mb-2">Orientações</p>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Todos os TCCs</h2>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8" id="projects-grid"></div>
+        </div>
+
+        {# ── Detalhe do Projeto ────────────────────────────────── #}
+        <div id="view-detalhe-projeto" class="view-section hidden p-8 md:p-12 w-full">
+            <div class="flex flex-col xl:flex-row justify-between items-start mb-10 gap-6">
+                <div class="w-full">
+                    <p class="text-base text-gray-500 mb-2">Projeto de TCC (Orientação)</p>
+                    <h2 id="detalhe-titulo" class="text-3xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">Titulo</h2>
+                    <p id="detalhe-resumo" class="text-gray-600 text-lg mb-5 w-full">Resumo</p>
+                    <p class="text-base text-gray-500">Aluno responsável: <span id="detalhe-aluno" class="font-medium text-gray-700">Nome</span></p>
+                </div>
+                <div class="w-full xl:w-auto flex-shrink-0 mt-4 xl:mt-0">
+                    <button onclick="excluirProjetoAtual()" class="bg-red-50 text-red-600 hover:bg-red-100 px-5 py-2.5 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors border border-red-200 w-full xl:w-auto">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i> Excluir Orientação
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-4 gap-10">
+                <div class="xl:col-span-3">
+                    <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                        <h3 class="text-2xl font-semibold text-gray-800">Entregas para Avaliação</h3>
+                    </div>
+                    <div id="timeline-container" class="space-y-8"></div>
+                </div>
+
+                <div class="xl:col-span-1">
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm sticky top-24 w-full">
+                        <h3 class="text-base font-semibold text-gray-800 mb-5 flex items-center gap-2">
+                            <i data-lucide="users" class="w-5 h-5 text-gray-500"></i> Equipe
+                        </h3>
+                        <div class="space-y-5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-600" id="aluno-avatar">A</div>
+                                    <div>
+                                        <p id="equipe-aluno-nome" class="text-base font-medium text-gray-900 leading-none">Aluno</p>
+                                        <p class="text-sm text-gray-500 mt-1">aluno@univ.br</p>
+                                    </div>
+                                </div>
+                                <span class="bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded font-medium">aluno</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-700">
+                                        {{ request.user.get_full_name|default:request.user.username|first|upper }}
+                                    </div>
+                                    <div class="max-w-[120px]">
+                                        <p class="text-base font-medium text-gray-900 leading-none truncate">
+                                            {{ request.user.get_full_name|default:request.user.username }}
+                                        </p>
+                                        <p class="text-sm text-gray-500 mt-1 truncate">{{ request.user.email }}</p>
+                                    </div>
+                                </div>
+                                <span class="bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded font-medium">professor</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[60] flex flex-col gap-3"></div>
+
+    <script>
+        lucide.createIcons();
+
+        // Nome do professor vindo da session Django (sem localStorage)
+        const nomeUsuarioAtual = "{{ request.user.get_full_name|default:request.user.username }}";
+
+        // ── Logout ────────────────────────────────────────────
+        function logout() {
+            document.getElementById('logout-form').submit();
+        }
+
+        // ── Sidebar ───────────────────────────────────────────
+        let isMinimized = false;
+
+        function toggleMinimize() {
+            const sidebar = document.getElementById('sidebar');
+            const texts   = document.querySelectorAll('.sidebar-text');
+            const icon    = document.getElementById('icon-minimize');
+            isMinimized   = !isMinimized;
+
+            if (isMinimized) {
+                sidebar.classList.replace('w-96', 'w-20');
+                icon.setAttribute('data-lucide', 'chevrons-right');
+                texts.forEach(t => t.classList.add('hidden'));
+            } else {
+                sidebar.classList.replace('w-20', 'w-96');
+                icon.setAttribute('data-lucide', 'chevrons-left');
+                texts.forEach(t => t.classList.remove('hidden'));
+            }
+            lucide.createIcons();
+        }
+
+        function toggleMobileSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.toggle('hidden');
+        }
+
+        // ── Navegação SPA ─────────────────────────────────────
+        function navigate(viewName, projId = null) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('bg-indigo-800', 'text-white', 'font-medium');
+                el.classList.add('text-indigo-100');
+            });
+
+            const ativar = (id) => {
+                const btn = document.getElementById(id);
+                btn.classList.add('bg-indigo-800', 'text-white', 'font-medium');
+                btn.classList.remove('text-indigo-100');
+            };
+
+            if (viewName === 'painel') {
+                document.getElementById('view-painel').classList.remove('hidden');
+                ativar('nav-painel');
+                document.getElementById('stat-tccs').textContent     = projetos.length;
+                document.getElementById('stat-pendentes').textContent =
+                    projetos.reduce((acc, p) => acc + p.entregas.filter(e => e.status === 'pendente').length, 0);
+            } else if (viewName === 'projetos') {
+                document.getElementById('view-projetos').classList.remove('hidden');
+                ativar('nav-projetos');
+                renderProjetos();
+            } else if (viewName === 'detalhe') {
+                document.getElementById('view-detalhe-projeto').classList.remove('hidden');
+                projetoAtualId = projId;
+                renderDetalheProjeto();
+            }
+
+            renderSidebarProjects();
+
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (!sidebar.classList.contains('-translate-x-full')) toggleMobileSidebar();
+            }
+        }
+
+        // ── Dados (mock — substituir por fetch ao backend futuramente) ──
+        let projetos = [
+            {
+                id: '1',
+                titulo: 'Análise de Algoritmos de Recomendação em E-commerce',
+                resumo: 'Estudo comparativo entre filtragem colaborativa e baseada em conteúdo aplicado a plataformas de comércio eletrônico.',
+                aluno: 'Ítalo',
+                entregasCount: 1,
+                entregas: [{
+                    titulo: 'Capítulo 1 - Introdução',
+                    descricao: 'Primeiro capítulo finalizado para avaliação ortográfica.',
+                    prazoFormatado: '25 de mai. de 2026',
+                    status: 'pendente'
+                }],
+                comentarios: {}
+            }
+        ];
+
+        let projetoAtualId = null;
+
+        // ── Render ────────────────────────────────────────────
+        function renderProjetos() {
+            const grid = document.getElementById('projects-grid');
+            grid.innerHTML = '';
+            projetos.forEach(proj => {
+                grid.innerHTML += `
+                    <div onclick="navigate('detalhe', '${proj.id}')"
+                        class="bg-white border-l-4 border-indigo-500 rounded-xl p-8 shadow-sm hover:shadow-md cursor-pointer transition-shadow">
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">${proj.titulo}</h3>
+                        <p class="text-base text-gray-600 line-clamp-3 mb-6">${proj.resumo}</p>
+                        <p class="text-sm text-gray-500 mb-6">Aluno: <span class="font-medium text-gray-700">${proj.aluno}</span></p>
+                        <div class="flex items-center gap-5 text-sm text-gray-500 border-t border-gray-100 pt-5">
+                            <span class="flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> ${proj.entregasCount} entregas do aluno</span>
+                        </div>
+                    </div>`;
+            });
+            lucide.createIcons();
+        }
+
+        function renderSidebarProjects() {
+            const list = document.getElementById('sidebar-projects-list');
+            list.innerHTML = '';
+            projetos.forEach(proj => {
+                const isActive = projetoAtualId === proj.id
+                    && !document.getElementById('view-detalhe-projeto').classList.contains('hidden');
+                list.innerHTML += `
+                    <button onclick="navigate('detalhe', '${proj.id}')"
+                        class="w-full flex items-center gap-4 px-4 py-3 text-sm rounded-md transition-colors text-left
+                               ${isActive ? 'bg-indigo-800 text-white font-medium' : 'text-indigo-100 hover:bg-indigo-800'}">
+                        <i data-lucide="folder" class="w-5 h-5 flex-shrink-0 ${isActive ? 'text-indigo-300' : 'text-indigo-400'}"></i>
+                        <span class="sidebar-text truncate">${proj.titulo}</span>
+                    </button>`;
+            });
+            if (isMinimized) document.querySelectorAll('.sidebar-text').forEach(t => t.classList.add('hidden'));
+            lucide.createIcons();
+        }
+
+        function renderDetalheProjeto() {
+            const proj = projetos.find(p => p.id === projetoAtualId);
+            if (!proj) return;
+            document.getElementById('detalhe-titulo').textContent = proj.titulo;
+            document.getElementById('detalhe-resumo').textContent = proj.resumo;
+            document.getElementById('detalhe-aluno').textContent  = proj.aluno;
+            document.getElementById('equipe-aluno-nome').textContent = proj.aluno;
+            document.getElementById('aluno-avatar').textContent   = proj.aluno.charAt(0).toUpperCase();
+            renderTimeline(proj);
+        }
+
+        function renderTimeline(proj) {
+            const container = document.getElementById('timeline-container');
+            if (proj.entregas.length === 0) {
+                container.innerHTML = `<div class="border-2 border-dashed border-gray-200 bg-white rounded-xl p-12 text-center text-lg text-gray-500">O aluno ainda não enviou entregas.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            proj.entregas.forEach((ent, index) => {
+                let commentsHTML = '';
+                if (proj.comentarios[index]) {
+                    proj.comentarios[index].forEach(c => {
+                        commentsHTML += `<div class="mb-3 p-3 bg-white border border-gray-200 rounded-lg text-base text-gray-700 shadow-sm"><span class="font-bold text-gray-900">${c.autor}:</span> ${c.texto}</div>`;
+                    });
+                }
+
+                let statusBadge = '';
+                let botoesAcao  = '';
+
+                if (ent.status === 'pendente') {
+                    statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-sm px-3 py-1.5 rounded flex items-center gap-2 font-medium border border-yellow-200"><div class="w-2 h-2 rounded-full bg-yellow-400"></div> Requer Avaliação</span>`;
+                    botoesAcao  = `
+                        <div class="flex gap-3 mt-6 border-t border-gray-100 pt-5">
+                            <button onclick="avaliarEntrega(${index}, 'aprovado')" class="bg-green-600 text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i> Aprovar Entrega
+                            </button>
+                            <button onclick="avaliarEntrega(${index}, 'devolvido')" class="bg-red-50 text-red-600 border border-red-200 px-5 py-2.5 rounded-md text-sm font-medium hover:bg-red-100 transition-colors flex items-center gap-2">
+                                <i data-lucide="x-circle" class="w-4 h-4"></i> Exigir Correção
+                            </button>
+                        </div>`;
+                } else if (ent.status === 'aprovado') {
+                    statusBadge = `<span class="bg-green-100 text-green-800 text-sm px-3 py-1.5 rounded flex items-center gap-2 font-medium border border-green-200"><div class="w-2 h-2 rounded-full bg-green-500"></div> Aprovado</span>`;
+                } else {
+                    statusBadge = `<span class="bg-red-100 text-red-800 text-sm px-3 py-1.5 rounded flex items-center gap-2 font-medium border border-red-200"><div class="w-2 h-2 rounded-full bg-red-500"></div> Devolvido para Ajustes</span>`;
+                }
+
+                container.innerHTML += `
+                    <div class="bg-white border ${ent.status === 'pendente' ? 'border-indigo-300 ring-2 ring-indigo-50' : 'border-gray-200'} rounded-xl shadow-sm overflow-hidden mb-8">
+                        <div class="p-6 md:p-8">
+                            <div class="flex items-center gap-4 mb-4">
+                                ${statusBadge}
+                                <span class="text-sm text-gray-500 flex items-center gap-2">
+                                    <i data-lucide="calendar" class="w-4 h-4"></i> Prazo: ${ent.prazoFormatado}
+                                </span>
+                            </div>
+                            <h4 class="text-xl font-medium text-gray-900">${ent.titulo}</h4>
+                            <p class="text-base text-gray-600 mt-2">${ent.descricao}</p>
+                            ${botoesAcao}
+                        </div>
+                        <div class="bg-gray-50 p-6 md:p-8 border-t border-gray-100">
+                            <div class="comments-list mb-4" id="comments-${index}">${commentsHTML}</div>
+                            <form onsubmit="handleComment(event, ${index})" class="relative">
+                                <input type="text" required placeholder="Deixe uma nota ou feedback para o aluno..."
+                                    class="w-full border border-gray-300 rounded-md px-4 py-3 pr-28 text-base focus:outline-none focus:border-indigo-500 bg-white">
+                                <button type="submit" class="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-sm font-medium transition-colors">Comentar</button>
+                            </form>
+                        </div>
+                    </div>`;
+            });
+            lucide.createIcons();
+        }
+
+        // ── Ações ─────────────────────────────────────────────
+        function excluirProjetoAtual() {
+            if (confirm("Tem certeza que deseja excluir esta orientação da sua lista?")) {
+                projetos = projetos.filter(p => p.id !== projetoAtualId);
+                showToast('Orientação removida com sucesso!');
+                navigate('projetos');
+            }
+        }
+
+        function avaliarEntrega(index, novoStatus) {
+            const proj = projetos.find(p => p.id === projetoAtualId);
+            proj.entregas[index].status = novoStatus;
+            showToast(novoStatus === 'aprovado' ? 'Entrega aprovada com sucesso!' : 'Entrega devolvida para correção.');
+            renderDetalheProjeto();
+        }
+
+        function handleComment(e, entregaIndex) {
+            e.preventDefault();
+            const input = e.target.querySelector('input');
+            const proj  = projetos.find(p => p.id === projetoAtualId);
+            if (!proj.comentarios[entregaIndex]) proj.comentarios[entregaIndex] = [];
+            proj.comentarios[entregaIndex].push({ autor: nomeUsuarioAtual, texto: input.value });
+
+            document.getElementById(`comments-${entregaIndex}`).innerHTML +=
+                `<div class="mb-3 p-3 bg-white border border-gray-200 rounded-lg text-base text-gray-700 shadow-sm">
+                    <span class="font-bold text-gray-900">${nomeUsuarioAtual}:</span> ${input.value}
+                 </div>`;
+            input.value = '';
+            showToast('Feedback enviado ao aluno.');
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast     = document.createElement('div');
+            toast.className = 'bg-gray-900 text-white px-5 py-4 rounded-lg shadow-lg flex items-center gap-3 text-base font-medium toast-enter';
+            toast.innerHTML = `
+                <div class="bg-indigo-500 rounded-full p-1 flex-shrink-0">
+                    <i data-lucide="check" class="w-4 h-4 text-white"></i>
+                </div>${message}`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-leave');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        navigate('painel');
+    </script>
+</body>
+</html>

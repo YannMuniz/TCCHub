@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'tcc',
 ]
 
+LOGIN_URL = 'login'  # para o @login_required saber onde redirecionar
+AUTH_USER_MODEL = 'tcc.Usuario'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
