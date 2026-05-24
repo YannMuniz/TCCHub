@@ -12,7 +12,7 @@
   - Italo de Souza Ivair – 6º período
   - Felipe Gabriel Zegunis Queiroz – 3º período
 - **Link do Repositório (GitHub/GitLab):** https://github.com/YannMuniz/TCCHub
-- **Link do Rascunho/Design (Figma/Lovable/Excalidraw):** (a preencher)
+- **Link do Rascunho/Design (Figma/Lovable/Excalidraw):** https://mm.tt/map/4011625734?t=cFRvtyi1Tq
 
 ---
 
@@ -48,26 +48,24 @@
 
 ### 4.1. Quem está fazendo o quê na equipe?
 
-- **Yann (7º período):** Arquitetura do sistema, banco de dados, rotas principais.  
-- **Integrante B (6º período):** Frontend (Bootstrap, templates, integração com backend).  
-- **Integrante C (3º período):** CRUD de entregas e testes.  
-- **Integrante D (1º período):** Documentação, pitch, slides e apresentação.
-
+- **Yann Muniz Barbosa da Conceição (7º período):** Arquitetura do sistema, banco de dados, rotas principais e integração com backend.  
+- **Italo de Souza Ivair (6º período):** Frontend (Bootstrap e templates) e slides.  
+- **Integrante C (3º período):** CRUD de entregas e testes.
 ---
 
 ## 🛠️ 5. Status Atual do Desenvolvimento (O MVP)
 
 ### 5.1. Vocês já começaram o protótipo visual ou o código do MVP? Qual o percentual de conclusão estimado?
 
-- **Status:** ( ) Não começamos | (x) Apenas rascunho visual | ( ) Código inicial iniciado | ( ) Mais da metade pronto
+- **Status:** ( ) Não começamos | ( ) Apenas rascunho visual | ( ) Código inicial iniciado | (X) Mais da metade pronto
 
 ### 5.2. O projeto já funciona em alguma parte? O que já está codificado e operacional?
 
-> **Descrição:** Ainda não funcional; temos apenas o rascunho visual e definição das rotas principais.
+> **Descrição:** Sistema meio funcional, telas prontas e faltando integração com o backend.
 
 ### 5.3. O que foi ou será "Mockado" (dados fictícios/estáticos)?
 
-> **Descrição:** Linha do tempo inicial e feedback do professor serão mockados para demonstração.
+> **Descrição:** Usuários iniciais do sistema.
 
 ### 5.4. O que ainda falta finalizar obrigatoriamente para a entrega?
 

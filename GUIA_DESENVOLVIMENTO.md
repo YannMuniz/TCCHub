@@ -138,24 +138,24 @@ tcc/
 │       └── createsuperuser_with_cargo.py
 ├── static/
 │   ├── css/
-│   │   └── style.css                    (✓ Reorganizado)
+│   │   └── style.css                    
 │   ├── img/
 │   └── js/
-│       ├── common.js                    (✓ Novo)
-│       ├── aluno.js                     (✓ Novo)
-│       └── professor.js                 (✓ Novo)
+│       ├── common.js                    
+│       ├── aluno.js                     
+│       └── professor.js                 
 ├── templates/
 │   └── tcc/
 │       ├── login.html
-│       ├── index_aluno.html             (✓ Atualizado)
-│       └── index_professor.html         (✓ Atualizado)
+│       ├── index_aluno.html             
+│       └── index_professor.html         
 ├── __init__.py
 ├── admin.py
 ├── apps.py
-├── models.py                            (✓ Atualizado)
+├── models.py                            
 ├── tests.py
-├── urls.py                              (✓ Atualizado)
-└── views.py                             (✓ Atualizado)
+├── urls.py                              
+└── views.py                             
 */
 
 
