@@ -6,7 +6,10 @@
  * Descrição: Funções específicas para o portal do professor
  */
 
-const nomeUsuarioAtual = document.querySelector('[data-user-name]')?.dataset.userName || 'Professor';
+// Obter nome do usuário do DOM ou da session
+const nomeUsuarioAtual = document.body.getAttribute('data-user-name') || 
+                         document.querySelector('[data-user-name]')?.getAttribute('data-user-name') || 
+                         'Professor';
 
 // Dados dos projetos (será substituído por fetch ao backend)
 let projetos = [];
@@ -81,7 +84,7 @@ function navigate(viewName, projId = null) {
  */
 async function carregarProjetos() {
     try {
-        const response = await fetchWithCSRF('/api/projetos/', { method: 'GET' });
+        const response = await fetchWithCSRF('/tcc/api/projetos/', { method: 'GET' });
         if (response.ok) {
             projetos = await response.json();
         } else {

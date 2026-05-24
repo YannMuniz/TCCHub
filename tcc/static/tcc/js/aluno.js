@@ -6,7 +6,10 @@
  * Descrição: Funções específicas para o portal do aluno
  */
 
-const nomeUsuarioAtual = document.querySelector('[data-user-name]')?.dataset.userName || 'Aluno';
+// Obter nome do usuário do DOM ou da session
+const nomeUsuarioAtual = document.body.getAttribute('data-user-name') || 
+                         document.querySelector('[data-user-name]')?.getAttribute('data-user-name') || 
+                         'Aluno';
 
 // Dados dos projetos (será substituído por fetch ao backend)
 let projetos = [];
@@ -86,11 +89,11 @@ function navigate(viewName, projId = null) {
  */
 async function carregarProjetos() {
     try {
-        const response = await fetchWithCSRF('/api/projetos/', { method: 'GET' });
+        const response = await fetchWithCSRF('/tcc/api/projetos/', { method: 'GET' });
         if (response.ok) {
             projetos = await response.json();
         } else {
-            // Se não tiver API, mantém dados vazios ou mock
+            // Se não tiver API, mantém dados vazios
             projetos = [];
         }
     } catch (error) {
@@ -318,10 +321,6 @@ function handleComment(e, entregaIndex) {
     showToast('Comentário publicado');
     
     // TODO: Enviar comentário ao servidor
-    // await fetchWithCSRF(`/api/projetos/${proj.id}/comentarios/`, {
-    //     method: 'POST',
-    //     body: JSON.stringify({ entrega_id: proj.entregas[entregaIndex].id, texto: comentario })
-    // });
 }
 
 /**
