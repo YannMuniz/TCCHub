@@ -369,14 +369,6 @@ async function handleComment(e, entregaId) {
     const input = e.target.querySelector('input');
     const texto = input.value.trim();
 
-<<<<<<< HEAD
-    const comentario = input.value;
-    input.value = '';
-    
-    showToast('Comentário publicado');
-    
-    // TODO: Enviar comentário ao servidor
-=======
     if (!texto) {
         showToast('Comentário não pode estar vazio', 'info');
         return;
@@ -411,7 +403,6 @@ async function handleComment(e, entregaId) {
         console.error('Erro ao comentar:', error);
         showToast('Erro ao enviar nota', 'error');
     }
->>>>>>> alteracoes_model
 }
 
 /**
