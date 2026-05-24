@@ -26,11 +26,8 @@ let projetoAtualId = null;
  * @param {string} viewName - Nome da view a ser exibida
  * @param {string} projId - ID do projeto (quando necessário)
  */
-function navigate(viewName, projId = null) {
-    // Oculta todas as views
+async function navigate(viewName, projId = null) {
     document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-    
-    // Remove estilo ativo de todos os botões de navegação
     document.querySelectorAll('.nav-btn').forEach(el => {
         el.classList.remove('bg-indigo-800', 'text-white', 'font-medium');
         el.classList.add('text-indigo-100');
@@ -57,14 +54,14 @@ function navigate(viewName, projId = null) {
             break;
         case 'detalhe':
             document.getElementById('view-detalhe-projeto').classList.remove('hidden');
-            projetoAtualId = projId;
+            projetoAtualId = Number(projId); // garante number — era string vinda do onclick
+            await carregarProjetoDetalhe(projetoAtualId); // dados frescos + comentários
             renderDetalheProjeto();
             break;
     }
 
     renderSidebarProjects();
 
-    // Fecha sidebar em dispositivos móveis
     if (window.innerWidth < 768) {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar.classList.contains('-translate-x-full')) {
@@ -196,12 +193,13 @@ function renderDetalheProjeto() {
 
     document.getElementById('detalhe-titulo').textContent = proj.titulo;
     document.getElementById('detalhe-resumo').textContent = proj.descricao;
-    document.getElementById('detalhe-aluno').textContent = proj.aluno;
-    document.getElementById('equipe-aluno-nome').textContent = proj.aluno;
-    
+    // Usa aluno_nome (nome completo) em vez de username
+    document.getElementById('detalhe-aluno').textContent = proj.aluno_nome;
+    document.getElementById('equipe-aluno-nome').textContent = proj.aluno_nome;
+
     const alunoAvatar = document.getElementById('aluno-avatar');
     if (alunoAvatar) {
-        alunoAvatar.textContent = proj.aluno.charAt(0).toUpperCase();
+        alunoAvatar.textContent = proj.aluno_nome.charAt(0).toUpperCase();
     }
 
     renderTimeline(proj);
@@ -224,7 +222,7 @@ function renderTimeline(proj) {
     }
 
     container.innerHTML = '';
-    proj.entregas.forEach((ent, index) => {
+    proj.entregas.forEach(ent => {
         let statusBadge = '';
         let botoesAcao = '';
 
@@ -235,11 +233,11 @@ function renderTimeline(proj) {
                 </span>`;
             botoesAcao = `
                 <div class="flex gap-3 mt-6 border-t border-gray-100 pt-5 flex-wrap">
-                    <button onclick="avaliarEntrega(${index}, 'aprovado')" 
+                    <button onclick="avaliarEntrega(${ent.id}, 'aprovado')"
                         class="bg-green-600 text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
                         <i data-lucide="check-circle" class="w-4 h-4"></i> Aprovar Entrega
                     </button>
-                    <button onclick="avaliarEntrega(${index}, 'correcao')" 
+                    <button onclick="avaliarEntrega(${ent.id}, 'correcao')"
                         class="bg-red-50 text-red-600 border border-red-200 px-5 py-2.5 rounded-md text-sm font-medium hover:bg-red-100 transition-colors flex items-center gap-2">
                         <i data-lucide="x-circle" class="w-4 h-4"></i> Exigir Correção
                     </button>
@@ -262,7 +260,7 @@ function renderTimeline(proj) {
                     <div class="flex items-center gap-4 mb-4 flex-wrap">
                         ${statusBadge}
                         <span class="text-sm text-gray-500 flex items-center gap-2">
-                            <i data-lucide="calendar" class="w-4 h-4"></i> 
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
                             Entregue: ${ent.data_envio ? new Date(ent.data_envio).toLocaleDateString('pt-BR') : 'N/A'}
                         </span>
                     </div>
@@ -271,11 +269,15 @@ function renderTimeline(proj) {
                     ${botoesAcao}
                 </div>
                 <div class="bg-gray-50 p-6 md:p-8 border-t border-gray-100">
-                    <form onsubmit="handleComment(event, ${index})" class="relative">
-                        <input type="text" required placeholder="Deixe uma nota ou feedback para o aluno..."
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Notas e feedback</p>
+                    <div id="comments-${ent.id}" class="space-y-1 mb-4">
+                        ${renderComentarios(ent.comentarios)}
+                    </div>
+                    <form onsubmit="handleComment(event, ${ent.id})" class="relative mt-3">
+                        <input type="text" placeholder="Deixe um feedback para o aluno..."
                             class="w-full border border-gray-300 rounded-md px-4 py-3 pr-28 text-base focus:outline-none focus:border-indigo-500 bg-white">
                         <button type="submit" class="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-sm font-medium transition-colors">
-                            Comentar
+                            Enviar
                         </button>
                     </form>
                 </div>
@@ -291,62 +293,140 @@ function renderTimeline(proj) {
  */
 
 /**
- * Remove a orientação da lista
+ * Remove a orientação da lista (deleta o projeto)
  */
-function excluirProjetoAtual() {
-    if (confirm("Tem certeza que deseja remover esta orientação da sua lista?")) {
-        projetos = projetos.filter(p => p.id !== projetoAtualId);
-        showToast('Orientação removida com sucesso!');
-        navigate('projetos');
+async function excluirProjetoAtual() {
+    if (!confirm("Tem certeza que deseja remover esta orientação da sua lista?")) {
+        return;
+    }
+    
+    try {
+        const response = await fetchWithCSRF(`/tcc/api/projetos/${projetoAtualId}/deletar/`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            projetos = projetos.filter(p => p.id !== projetoAtualId);
+            showToast('Orientação removida com sucesso!');
+            navigate('projetos');
+        } else {
+            const error = await response.json();
+            showToast(error.error || 'Erro ao remover orientação', 'error');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao remover orientação', 'error');
     }
 }
 
 /**
- * Avalia uma entrega (aprova ou solicita correção)
+ * Avalia uma entrega (aprova ou solicita correção) via AJAX
  * @param {number} index - Índice da entrega
  * @param {string} novoStatus - Novo status ('aprovado' ou 'correcao')
  */
-function avaliarEntrega(index, novoStatus) {
-    const proj = projetos.find(p => p.id === projetoAtualId);
-    if (!proj || !proj.entregas) return;
-
-    proj.entregas[index].status = novoStatus;
-
-    const mensagem = novoStatus === 'aprovado' 
-        ? 'Entrega aprovada com sucesso!' 
-        : 'Entrega devolvida para correção.';
-    
-    showToast(mensagem);
-    renderDetalheProjeto();
-
-    // TODO: Enviar avaliação ao servidor
-    // await fetchWithCSRF(`/api/entregas/${proj.entregas[index].id}/avaliar/`, {
-    //     method: 'POST',
-    //     body: JSON.stringify({ status: novoStatus })
-    // });
-}
-
-/**
- * Trata o envio de comentários/feedback
- * @param {Event} e - Evento do formulário
- * @param {number} entregaIndex - Índice da entrega
- */
-function handleComment(e, entregaIndex) {
-    e.preventDefault();
-    const input = e.target.querySelector('input');
+async function avaliarEntrega(entregaId, novoStatus) {
     const proj = projetos.find(p => p.id === projetoAtualId);
     if (!proj) return;
 
-    const comentario = input.value;
-    input.value = '';
-    
-    showToast('Feedback enviado ao aluno.');
-    
-    // TODO: Enviar comentário ao servidor
-    // await fetchWithCSRF(`/api/projetos/${proj.id}/comentarios/`, {
-    //     method: 'POST',
-    //     body: JSON.stringify({ entrega_id: proj.entregas[entregaIndex].id, texto: comentario })
-    // });
+    const entrega = proj.entregas.find(e => e.id === entregaId);
+    if (!entrega) {
+        showToast('Entrega não encontrada', 'error');
+        return;
+    }
+
+    let observacao = '';
+    if (novoStatus === 'correcao') {
+        observacao = prompt('Descreva quais correções são necessárias:');
+        if (observacao === null) return; // cancelado
+    }
+
+    try {
+        const response = await fetchWithCSRF(`/tcc/api/entregas/${entregaId}/avaliar/`, {
+            method: 'POST',
+            body: JSON.stringify({ status: novoStatus, observacao })
+        });
+
+        if (response.ok) {
+            entrega.status = novoStatus; // atualiza estado local
+            const msg = novoStatus === 'aprovado'
+                ? 'Entrega aprovada com sucesso!'
+                : 'Entrega devolvida para correção.';
+            showToast(msg);
+            renderDetalheProjeto();
+            atualizarEstatisticas();
+        } else {
+            const error = await response.json();
+            showToast(error.error || 'Erro ao avaliar entrega', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao avaliar:', error);
+        showToast('Erro ao avaliar entrega', 'error');
+    }
+}
+
+async function carregarProjetoDetalhe(projId) {
+    try {
+        const response = await fetchWithCSRF(`/tcc/api/projetos/${projId}/`, { method: 'GET' });
+        if (!response.ok) return;
+
+        const atualizado = await response.json();
+        const idx = projetos.findIndex(p => p.id === Number(projId));
+        if (idx !== -1) {
+            projetos[idx] = atualizado;
+        } else {
+            projetos.push(atualizado);
+        }
+    } catch (error) {
+        console.warn('Erro ao atualizar detalhe do projeto:', error);
+    }
+}
+
+/**
+ * Trata o envio de comentários/feedback (não implementado no backend)
+ * @param {Event} e - Evento do formulário
+ * @param {number} entregaIndex - Índice da entrega
+ */
+async function handleComment(e, entregaId) {
+    e.preventDefault();
+    const input = e.target.querySelector('input');
+    const texto = input.value.trim();
+
+    if (!texto) {
+        showToast('Comentário não pode estar vazio', 'info');
+        return;
+    }
+
+    try {
+        const response = await fetchWithCSRF(`/tcc/api/entregas/${entregaId}/comentarios/`, {
+            method: 'POST',
+            body: JSON.stringify({ texto })
+        });
+
+        if (response.ok) {
+            const novoComentario = await response.json();
+
+            // Atualiza estado local
+            const proj = projetos.find(p => p.id === projetoAtualId);
+            const entrega = proj?.entregas.find(en => en.id === entregaId);
+            if (entrega) {
+                if (!entrega.comentarios) entrega.comentarios = [];
+                entrega.comentarios.push(novoComentario);
+            }
+
+            // Atualiza só o bloco de comentários, sem re-renderizar a timeline inteira
+            const div = document.getElementById(`comments-${entregaId}`);
+            if (div) div.innerHTML = renderComentarios(entrega?.comentarios || []);
+
+            input.value = '';
+            showToast('Nota adicionada!');
+        } else {
+            const error = await response.json();
+            showToast(error.error || 'Erro ao adicionar nota', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao comentar:', error);
+        showToast('Erro ao adicionar nota', 'error');
+    }
 }
 
 /**

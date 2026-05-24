@@ -123,3 +123,34 @@ async function fetchWithCSRF(url, options = {}) {
         headers
     });
 }
+
+/**
+ * Renderiza lista de comentários de uma entrega.
+ * Compartilhado entre aluno.js e professor.js.
+ * @param {Array} comentarios
+ * @returns {string} HTML
+ */
+function renderComentarios(comentarios) {
+    if (!comentarios || comentarios.length === 0) {
+        return '<p class="text-sm text-gray-400 italic">Nenhuma nota ainda.</p>';
+    }
+    return comentarios.map(c => `
+        <div class="flex gap-3 text-sm py-2.5 border-b border-gray-100 last:border-0 last:pb-0">
+            <div class="w-7 h-7 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center text-xs font-bold
+                        ${c.cargo === 'orientador' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}">
+                ${c.autor.charAt(0).toUpperCase()}
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-medium text-gray-800">${c.autor}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full
+                                 ${c.cargo === 'orientador' ? 'bg-indigo-50 text-indigo-600' : 'bg-blue-50 text-blue-600'}">
+                        ${c.cargo === 'orientador' ? 'Orientador' : 'Aluno'}
+                    </span>
+                    <span class="text-xs text-gray-400">${c.data}</span>
+                </div>
+                <p class="text-gray-600 mt-0.5 break-words">${c.texto}</p>
+            </div>
+        </div>
+    `).join('');
+}
