@@ -236,6 +236,65 @@ function renderDetalheProjeto() {
     renderTimeline(proj);
 }
 
+function abrirModalReenvio(entregaId) {
+    document.getElementById('reenvio-entrega-id').value = entregaId;
+    document.getElementById('form-reenvio').reset();
+    document.getElementById('modal-reenvio').classList.remove('hidden');
+}
+
+function fecharModalReenvio() {
+    document.getElementById('modal-reenvio').classList.add('hidden');
+}
+
+async function reenviarEntrega(form) {
+    const entregaId = Number(document.getElementById('reenvio-entrega-id').value);
+    const arquivo   = document.getElementById('reenvio-arquivo').files[0];
+    const descricao = document.getElementById('reenvio-descricao').value.trim();
+
+    if (!arquivo) {
+        showToast('Selecione o arquivo corrigido', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('arquivo', arquivo);
+    if (descricao) formData.append('descricao', descricao);
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+    try {
+        const response = await fetch(`/tcc/api/entregas/${entregaId}/reenviar/`, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': csrftoken },
+        });
+
+        if (response.ok) {
+            const dados = await response.json();
+
+            // Atualiza estado local sem precisar refazer o fetch completo
+            const proj = projetos.find(p => p.id === projetoAtualId);
+            const entrega = proj?.entregas.find(e => e.id === entregaId);
+            if (entrega) {
+                entrega.status      = 'pendente';
+                entrega.arquivo_url  = dados.arquivo_url;
+                entrega.arquivo_nome = dados.arquivo_nome;
+                if (descricao) entrega.descricao = descricao;
+            }
+
+            fecharModalReenvio();
+            showToast('Entrega reenviada! Aguardando nova avaliação do orientador.');
+            renderDetalheProjeto();
+        } else {
+            const error = await response.json();
+            showToast(error.error || 'Erro ao reenviar', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao reenviar:', error);
+        showToast('Erro ao reenviar entrega', 'error');
+    }
+}
+
 /**
  * Renderiza a linha do tempo de entregas
  * @param {object} proj - Objeto do projeto
@@ -261,6 +320,20 @@ function renderTimeline(proj) {
     container.innerHTML = '';
     proj.entregas.forEach(ent => {
         const s = statusMap[ent.status] || statusMap.pendente;
+
+        // Botão de reenvio — aparece somente quando status é 'correcao'
+        const reenvioBtn = ent.status === 'correcao' ? `
+            <div class="mt-5 pt-5 border-t border-red-100">
+                <p class="text-sm text-red-600 mb-3 flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                    O orientador solicitou correções nesta entrega.
+                </p>
+                <button onclick="abrirModalReenvio(${ent.id})"
+                    class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md text-sm font-medium transition-colors">
+                    <i data-lucide="upload" class="w-4 h-4"></i> Reenviar com correções
+                </button>
+            </div>` : '';
+
         container.innerHTML += `
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-8">
                 <div class="p-6 md:p-8">
@@ -275,6 +348,7 @@ function renderTimeline(proj) {
                     </div>
                     <h4 class="text-xl font-medium text-gray-900">${ent.titulo}</h4>
                     <p class="text-base text-gray-600 mt-2">${ent.descricao}</p>
+                    ${reenvioBtn}
                 </div>
                 <div class="bg-gray-50 p-6 md:p-8 border-t border-gray-100">
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Notas para o orientador</p>
@@ -430,6 +504,14 @@ document.addEventListener('DOMContentLoaded', function() {
         formNovaEntrega.addEventListener('submit', async function(e) {
             e.preventDefault();
             await criarEntregaViaAjax(this);
+        });
+    }
+
+    const formReenvio = document.getElementById('form-reenvio');
+    if (formReenvio) {
+        formReenvio.addEventListener('submit', function (e) {
+            e.preventDefault();
+            reenviarEntrega(this);
         });
     }
 });

@@ -10,7 +10,7 @@ from .models import Projeto, Entrega, Correcao, Usuario
 
 # ── HELPER ─────────────────────────────────────────────────────────────────
 def _serializar_entregas(proj):
-    """Serializa entregas com comentários aninhados."""
+    """Serializa entregas com arquivo, comentários e histórico de correções."""
     result = []
     for e in proj.entregas.all():
         comentarios = [
@@ -29,6 +29,8 @@ def _serializar_entregas(proj):
             "descricao": e.descricao,
             "status": e.status,
             "data_envio": e.data_envio.isoformat(),
+            "arquivo_url": e.arquivo.url if e.arquivo else None,
+            "arquivo_nome": e.arquivo.name.split('/')[-1] if e.arquivo else None,
             "comentarios": comentarios,
         })
     return result
@@ -195,7 +197,7 @@ def api_projeto_deletar(request, projeto_id):
 @login_required(login_url="login")
 @require_http_methods(["POST"])
 def api_comentario_criar(request, entrega_id):
-    """Aluno e orientador do projeto podem comentar."""
+    """Aluno e orientador do projeto podem comentar em qualquer entrega."""
     entrega = get_object_or_404(Entrega, id=entrega_id)
     projeto = entrega.projeto
 
@@ -204,11 +206,14 @@ def api_comentario_criar(request, entrega_id):
 
     try:
         data = json.loads(request.body)
-        texto = data.get("texto", "").strip()
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "JSON inválido"}, status=400)
 
-        if not texto:
-            return JsonResponse({"error": "Comentário não pode estar vazio"}, status=400)
+    texto = data.get("texto", "").strip()
+    if not texto:
+        return JsonResponse({"error": "Comentário não pode estar vazio"}, status=400)
 
+    try:
         comentario = Comentario.objects.create(
             entrega=entrega,
             autor=request.user,
@@ -221,10 +226,8 @@ def api_comentario_criar(request, entrega_id):
             "cargo": comentario.autor.cargo,
             "data": comentario.data_comentario.strftime("%d/%m/%Y %H:%M"),
         }, status=201)
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "JSON inválido"}, status=400)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+        return JsonResponse({"error": f"Erro ao salvar: {str(e)}"}, status=500)
 
 # ──────────────────────────────────────────────────────────────────
 # API REST - ENTREGAS
@@ -302,6 +305,45 @@ def api_entrega_avaliar(request, entrega_id):
         }, status=201)
     except json.JSONDecodeError:
         return JsonResponse({"error": "JSON inválido"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def api_entrega_reenviar(request, entrega_id):
+    """
+    Aluno reenvia uma entrega devolvida para correção.
+    Substitui o arquivo e reseta o status para 'pendente'.
+    """
+    entrega = get_object_or_404(Entrega, id=entrega_id)
+
+    if entrega.projeto.aluno != request.user:
+        return JsonResponse({"error": "Sem permissão"}, status=403)
+
+    if entrega.status != 'correcao':
+        return JsonResponse(
+            {"error": "Apenas entregas devolvidas para correção podem ser reenviadas"},
+            status=400
+        )
+
+    arquivo = request.FILES.get('arquivo')
+    if not arquivo:
+        return JsonResponse({"error": "Arquivo é obrigatório para o reenvio"}, status=400)
+
+    try:
+        entrega.arquivo = arquivo
+        descricao = request.POST.get('descricao', '').strip()
+        if descricao:
+            entrega.descricao = descricao
+        entrega.status = 'pendente'
+        entrega.save()
+
+        return JsonResponse({
+            "id": entrega.id,
+            "status": entrega.status,
+            "arquivo_url": entrega.arquivo.url,
+            "arquivo_nome": entrega.arquivo.name.split('/')[-1],
+        })
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 

@@ -121,6 +121,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Diretórios adicionais onde Django procura por arquivos estáticos
 STATICFILES_DIRS = [
     BASE_DIR / 'tcc' / 'static',

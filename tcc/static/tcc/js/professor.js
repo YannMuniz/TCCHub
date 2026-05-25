@@ -254,6 +254,13 @@ function renderTimeline(proj) {
                 </span>`;
         }
 
+        // Botão de download — aparece sempre que houver arquivo
+        const downloadBtn = ent.arquivo_url ? `
+            <a href="${ent.arquivo_url}" download="${ent.arquivo_nome || 'entrega'}"
+                class="inline-flex items-center gap-2 mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i> Baixar arquivo (${ent.arquivo_nome || 'download'})
+            </a>` : '';
+
         container.innerHTML += `
             <div class="bg-white border ${ent.status === 'pendente' ? 'border-indigo-300 ring-2 ring-indigo-50' : 'border-gray-200'} rounded-xl shadow-sm overflow-hidden mb-8">
                 <div class="p-6 md:p-8">
@@ -266,6 +273,7 @@ function renderTimeline(proj) {
                     </div>
                     <h4 class="text-xl font-medium text-gray-900">${ent.titulo}</h4>
                     <p class="text-base text-gray-600 mt-2">${ent.descricao}</p>
+                    ${downloadBtn}
                     ${botoesAcao}
                 </div>
                 <div class="bg-gray-50 p-6 md:p-8 border-t border-gray-100">
